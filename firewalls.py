@@ -42,20 +42,16 @@ class Port(object):
     
     def _cisco_asa_parser(self):
         # Handle the starting line of the section seperately
-        print self.start
         start_re = 'interface GigabitEthernet([0-9]+)/([0-9]+)'
         start_line = self.text[0]
         match = re.search(start_re,start_line)
         self.number[0],self.number[2] = match.group(1),match.group(2)
         self.line_counter += 1
-        print self.line_counter
         # Dict containing regex for all possible settings within a port subsection
         re_dict = {'vlans':'vlan id ([0-9]+[ ]*)',
                    'ip':'ip address ([0-9]+.[0-9]+.[0-9]+.[0-9]+) ([0-9]+.[0-9]+.[0-9]+.[0-9])'}
         # Loop through the subsection
         for line in self.text[1:]:
-            print "Line to process: ",line
-            print "Line num before regex testing: ",self.line_counter
             for item,regex in re_dict.iteritems():
                 match = re.search(regex,line)
                 if match:
@@ -63,20 +59,15 @@ class Port(object):
                     self.line_counter += 1
                     if item == 'vlans':
                         all_vlans = re.findall('[0-9]+',line)
-                        print all_vlans 
                         for vlan in all_vlans:
                             self.vlans.append(vlan)
-                            print self.vlans
                     elif item == 'ip':
                         self.l3addr = {'ip':match.group(1), 'mask': match.group(2)}
                     break
                     
-            print "Linen num after re testing: ",self.line_counter
-            print "State of match: ",match
             if not match:
                 self.firewall.lines_missed[self.line_counter] = line
                 self.line_counter += 1
-            print "Line num at end of line loop iter: ",self.line_counter
 
     def get_type():
         return self.port_type
@@ -134,16 +125,22 @@ class Firewall(object):
     #-----------------------------------------------------------------------------#
     def _cisco_asa_parser(self):
         # The dictionary of basic objects the parser understands, and their regex's 
-        re_dict = {'port':'interface GigabitEthernet([0-9]+)/([0-9]+)','address-object':'^object network',
-                   'comment':'^[#,!]'}
+        re_dict = {'port':'interface GigabitEthernet[0-9]+/[0-9]+','address-object':'^object network',
+                   'comment':'^[#,!,:]'}
         # Compare the line to all the available regex's. Execute the appropiate parser for the sub
         # object 
         while self.line_counter < len(self.lines):
+            print self.line_counter
             line = self.lines[self.line_counter]
+            #print "LINE: ",line
             for obj,regex in re_dict.iteritems():
                 match = re.search(regex,line)
+                #print "OBJECT: ",obj
+                #print "REGEX: ",regex
+                #print "MATCH: ",match
                 if match:
                     print "Found a %s on line %d"%(obj,self.line_counter)
+                    self.lines_parsed[self.line_counter] = line
                     if obj == 'port':
                         self._cisco_asa_port_parser(line)
                     elif obj == 'address-object':
@@ -151,17 +148,14 @@ class Firewall(object):
                     elif obj == 'comment':
                         self.lines_parsed[self.line_counter] = line
                         self.line_counter += 1
-                    else:
-                        self.lines_parsed[self.line_counter] = line
-                        self.line_counter +=1
+                    break    
             if not match:
                 self.lines_missed[self.line_counter] = line
                 self.line_counter +=1
-            print self.line_counter
         print "Here are the lines we parsed"
-        print self.lines_parsed
+        print self.lines_parsed.keys()
         print "Here are the lines we missed"
-        print self.lines_missed
+        print self.lines_missed.keys()
     #-----------------------------------------------------------------------------#
     def _cisco_asa_port_parser(self,start_line):
         # Build out the chunk (includes the line the chunk starts on) and pass it into the parser
@@ -170,17 +164,13 @@ class Firewall(object):
         chunk = [start_line]
         self.lines_parsed[self.line_counter] = start_line
         start_num = self.line_counter
-        print start_num
         self.line_counter += 1
-        print self.line_counter
         while self.lines[self.line_counter][0] == " ":
-            print self.lines[self.line_counter]
             chunk.append(self.lines[self.line_counter])
             self.line_counter += 1
-            print self.line_counter
-        print "###############################"
-        print chunk
-        print "###############################"
+        #print "###############################"
+        #print chunk
+        #print "###############################"
         port = Port(self,chunk,start_num)
         port.parse()
         if port.line_counter != self.line_counter:
@@ -189,14 +179,14 @@ class Firewall(object):
             print "YOU FUCKED UP" 
             quit()
         self.physical_ports.append(port)
-        print self.physical_ports
-        for port in self.physical_ports:
-            for key, value in vars(port).iteritems():
-                print "KEY: ", key
-                print "VALUE: ",value
-            for value in dir(port):
-                print "VALUE: ",value
-            print port.vlans
+        #print self.physical_ports
+        #for port in self.physical_ports:
+        #    for key, value in vars(port).iteritems():
+        #        print "KEY: ", key
+        #        print "VALUE: ",value
+        #    for value in dir(port):
+        #        print "VALUE: ",value
+        #    print port.vlans
 
     def _cisco_asa_addressobj_parser(self):
         start_line = self.line_counter
