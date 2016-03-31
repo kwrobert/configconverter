@@ -84,10 +84,8 @@ def main():
     # Make sure the supplied args are valid
     check_args(args)
    
-    firewall = firewalls.Firewall(args.src_vendor,args.src_OS)
-    print firewall.parser
-    print firewall._parser_callable
-    firewall.parse_config(args.src_config)
+    firewall = firewalls.Firewall(args.src_vendor,args.src_OS,args.src_config)
+    firewall.parse()
 
 if __name__ == '__main__':
     main()
