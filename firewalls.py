@@ -83,8 +83,6 @@ class Port(object):
 
 class Firewall(object):
     
-    
-    
     def __init__(self, vendor, OS, conf_file):
         # Dictionaries for storing the objects contained within a firewall
         self.physical_ports = []
