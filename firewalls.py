@@ -113,8 +113,8 @@ class CiscoASAFirewall(Firewall):
         if set(self.lines_parsed.keys()).intersection(self.lines_missed.keys()):
             print "You messed up, here are the lines that are in both dicts"
             print set(self.lines_parsed.keys()).intersection(self.lines_missed.keys()) 
-        for line_num, line in self.lines_missed.iteritems():
-            print "%d: %s"%(line_num,line)
+        for line_num in sorted(self.lines_missed.keys()):
+            print "%d: %s"%(line_num,self.lines_missed[line_num])
     #-----------------------------------------------------------------------------#
     def port_parser(self,start_line):
         # Build out the chunk (includes the line the chunk starts on) and pass it into the parser

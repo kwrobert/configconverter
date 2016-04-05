@@ -40,6 +40,7 @@ class CiscoASAPort(Port):
         # the subinterface (number after the dot i.e interface GigabitEthernet0/1.399). The value
         # is another dictionary which stores all the info about the subinterface
         self.subinterfaces = {}
+        self.lag = {}
         self.speed = None
         self.number = [None,None,None]
         self.name = ""
@@ -55,9 +56,11 @@ class CiscoASAPort(Port):
         # Dict containing regex for all possible settings within a port subsection
         re_dict = {'sub_interface':'interface GigabitEthernet([0-9]+)/([0-9]+).([0-9]+)',
                    'vlans':'vlan id ([0-9]+[ ]*)',
-                   'ip':'ip address ([0-9]+.[0-9]+.[0-9]+.[0-9]+) ([0-9]+.[0-9]+.[0-9]+.[0-9])',
+                   'ip':'(no )*ip address( [0-9]+.[0-9]+.[0-9]+.[0-9]+)*([0-9]+.[0-9]+.[0-9]+.[0-9])*',
                    'trunk':'encapsulation dot1q ([0-9]]+[ ]*)',
-                   'name': '(no )*nameif ([A-z0-9-_]+)'}
+                   'name': '(no )*nameif( [A-z0-9-_]+)*',
+                   'lag': 'channel-group ([0-9]+) mode (active|passive)',
+                   'security':'(no )*security-level( [0-9]+)*'}
         # Check for subinterfaces 
         subinterfaces = False
         for line in self.text[1:]:
@@ -102,11 +105,22 @@ class CiscoASAPort(Port):
                                         vlans.append(vlan)
                                     self.subinterfaces[num]['vlans'] = vlans
                                 elif item == 'ip':
-                                    entries = {'ip':match.group(1), 'mask': match.group(2)}
-                                    self.subinterfaces[num].update(entries)
+                                    if not match.group(1):
+                                        entries = {'ip':match.group(2), 'mask': match.group(3)}
+                                        self.subinterfaces[num].update(entries)
                                 elif item == 'name':
                                     if not match.group(1):
                                         self.subinterfaces[num].update({'name':match.group(2)})
+                                # TODO: Can subinterfaces be members of a port channel? Ask
+                                # Matt/Brian cuz this may not be necessary
+                                elif item == 'lag':
+                                    self.subinterfaces[num].lag.update({'num':int(match.group(1)),'mode':match.group(2)})
+                                elif item == 'security':
+                                    if match.group(1):
+                                        self.subinterfaces[num].security = None
+                                    else:
+                                        self.subinterfaces[num].security = int(match.group(2))
+
                                 break
                                 
                         if not match:
@@ -126,12 +140,20 @@ class CiscoASAPort(Port):
                             for vlan in all_vlans:
                                 self.vlans.append(vlan)
                         elif item == 'ip':
-                            self.l3addr = {'ip':match.group(1), 'mask': match.group(2)}
+                            if not match.group(1):
+                                self.l3addr = {'ip':match.group(2), 'mask': match.group(3)}
                         elif item == 'port_type':
                             self.port_type = 'trunk'
                         elif item == 'name':
                             if not match.group(1):
                                 self.name = match.group(2)
+                        elif item == 'lag':
+                            self.lag.update({'num':int(match.group(1)),'mode':match.group(2)})
+                        elif item == 'security':
+                            if match.group(1):
+                                self.security = None
+                            else:
+                                self.security = int(match.group(2))
                         break
                         
                 if not match:
