@@ -8,8 +8,8 @@
 
 import argparse
 import os
-import firewalls
-
+import firewalls as fw
+import firewall_ports as fwp 
 def check_args(args):
     # Use this function to prevent the user from attempting an unsupported conversions
     
@@ -84,8 +84,10 @@ def main():
     # Make sure the supplied args are valid
     check_args(args)
    
-    firewall = firewalls.Firewall(args.src_vendor,args.src_OS,args.src_config)
+    firewall = fw.getFirewall(args.src_vendor,args.src_OS,args.src_config)
+    print firewall.vendor
+    print firewall.firmware
     firewall.parse()
-
+    
 if __name__ == '__main__':
     main()
