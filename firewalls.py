@@ -79,8 +79,8 @@ class CiscoASAFirewall(Firewall):
     #-----------------------------------------------------------------------------#
     def parse(self):
         # The dictionary of basic objects the parser understands, and their regex's 
-        re_dict = {'port':'interface GigabitEthernet[0-9]+/[0-9]+','address-object':'^object network',
-                   'comment':'^[#,!,:]'}
+        re_dict = {'port':'interface (GigabitEthernet|Management)[0-9]+/[0-9]+',
+                   'address-object':'^object network','comment':'^[#,!,:]'}
         # Compare the line to all the available regex's. Execute the appropiate parser for the sub
         # object 
         while self.line_counter < len(self.lines):

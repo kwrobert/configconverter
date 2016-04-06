@@ -48,19 +48,20 @@ class CiscoASAPort(Port):
     #-----------------------------------------------------------------------------#
     def parse(self):
         # Handle the starting line of the section seperately
-        start_re = 'interface GigabitEthernet([0-9]+)/([0-9]+)'
+        start_re = 'interface (Management|GigabitEthernet)([0-9]+)/([0-9]+)'
         start_line = self.text[0]
         match = re.search(start_re,start_line)
-        self.number[0],self.number[2] = match.group(1),match.group(2)
+        self.number[0],self.number[2] = match.group(2),match.group(3)
         self.line_counter += 1
         # Dict containing regex for all possible settings within a port subsection
         re_dict = {'sub_interface':'interface GigabitEthernet([0-9]+)/([0-9]+).([0-9]+)',
                    'vlans':'vlan id ([0-9]+[ ]*)',
-                   'ip':'(no )*ip address( [0-9]+.[0-9]+.[0-9]+.[0-9]+)*([0-9]+.[0-9]+.[0-9]+.[0-9])*',
+                   'ip':'(no )*ip address[ ]*([0-9]+.[0-9]+.[0-9]+.[0-9]+)*[ ]*([0-9]+.[0-9]+.[0-9]+.[0-9])*',
                    'trunk':'encapsulation dot1q ([0-9]]+[ ]*)',
                    'name': '(no )*nameif( [A-z0-9-_]+)*',
                    'lag': 'channel-group ([0-9]+) mode (active|passive)',
-                   'security':'(no )*security-level( [0-9]+)*'}
+                   'security':'(no )*security-level( [0-9]+)*',
+                   'description':'description ([A-z0-9-_ ]+)'}
         # Check for subinterfaces 
         subinterfaces = False
         for line in self.text[1:]:

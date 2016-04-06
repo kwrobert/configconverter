@@ -10,6 +10,8 @@ import argparse
 import os
 import firewalls as fw
 import firewall_ports as fwp 
+import json
+
 def check_args(args):
     # Use this function to prevent the user from attempting an unsupported conversions
     
@@ -88,6 +90,6 @@ def main():
     print firewall.vendor
     print firewall.firmware
     firewall.parse()
-    
+    print json.dumps(firewall) 
 if __name__ == '__main__':
     main()
