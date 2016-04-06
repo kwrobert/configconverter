@@ -86,10 +86,18 @@ def main():
     # Make sure the supplied args are valid
     check_args(args)
    
-    firewall = fw.getFirewall(args.src_vendor,args.src_OS,args.src_config)
+    firewall = fw.parse_config(args.src_vendor,args.src_OS,args.src_config)
     print firewall.vendor
     print firewall.firmware
-    firewall.parse()
-
+    print "Here are the lines we parsed"
+    print firewall.lines_parsed.keys()
+    print "Here are the lines we missed"
+    print firewall.lines_missed.keys()
+    if set(firewall.lines_parsed.keys()).intersection(firewall.lines_missed.keys()):
+        print "You messed up, here are the lines that are in both dicts"
+        print set(firewall.lines_parsed.keys()).intersection(firewall.lines_missed.keys()) 
+    for line_num in sorted(firewall.lines_missed.keys()):
+        print "%d: %s"%(line_num,firewall.lines_missed[line_num])
+    
 if __name__ == '__main__':
     main()
