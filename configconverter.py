@@ -90,6 +90,6 @@ def main():
     print firewall.vendor
     print firewall.firmware
     firewall.parse()
-    print json.dumps(firewall) 
+
 if __name__ == '__main__':
     main()
