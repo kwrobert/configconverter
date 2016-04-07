@@ -223,7 +223,7 @@ def _write_fortinet_lags(out_file,firewall):
         print lag
         print vars(lag)
         if lag.name:
-            out_file.write('\tedit "%s"'%port.name)
+            out_file.write('\tedit "%s"'%lag.name)
         else:
             out_file.write('\tedit "TEMPNAME"')
         out_file.write("\t\tset type aggregate")
