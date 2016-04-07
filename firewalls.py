@@ -74,7 +74,11 @@ def write_config(vendor,firmware,dest_path,firewall):
     else:
         raise NotImplementedError("Sorry, writing the vendor and firmware combination you specified \
         is not supported")
+
 #####################################################################################################
+#                               CISCO ASA FUNCTIONS
+#####################################################################################################
+
 def _parse_ciscoasa(vendor,firmware,config_path):
     # Initialize firewall 
     firewall = Firewall(vendor,firmware,config_path)
@@ -176,7 +180,50 @@ def _write_ciscoasa(dest_path,firewall):
     print firewall
     print dest_path
 #####################################################################################################
+#                                   FORTINET FUNCTIONS
+#####################################################################################################
+
 def _write_fortinet(dest_path,firewall):
     print "Writing fortinet config from firewall"
     print firewall
     print dest_path
+    with open(dest_path,'w+') as dest_file:
+        _write_fortinet_ports(dest_file,firewall)
+        _write_fortinet_lags(dest_file,firewall)
+        dest_file.write("end\n")
+#---------------------------------------------------------------------------------------------------#
+def _write_fortinet_ports(out_file,firewall):
+    # Some firewall zero index their ports but fortinets don't, so fix that
+    zero_indexed = False
+    for port in firewall.physical_ports:
+        if port.number[2] == 0:
+            zero_indexed = True
+    
+    if zero_indexed:
+        for port in firewall.physical_ports:
+            port.number[2] += 1
+
+    out_file.write("config system interface\n")
+    for port in firewall.physical_ports:
+        if port.kind == 'management':
+            out_file.write('\tedit "mgmt%d"\n'%port.number[2])
+        else:
+            out_file.write('\tedit "port%d"\n'%port.number[2])
+
+        if port.name:
+            out_file.write('\t\tset alias "%s"\n'%port.name)
+        
+        out_file.write('\t\tset type physical\n')
+        if 'l3addr' in vars(port).keys():
+            out_file.write('\t\tset ip %s %s\n'%(port.l3addr['ip'],port.l3addr['mask']))
+
+#---------------------------------------------------------------------------------------------------#
+def _write_fortinet_lags(out_file,firewall):
+    for lag in firewall.lags:
+        print lag
+        print vars(lag)
+        if lag.name:
+            out_file.write('\tedit "%s"'%port.name)
+        else:
+            out_file.write('\tedit "TEMPNAME"')
+        out_file.write("\t\tset type aggregate")

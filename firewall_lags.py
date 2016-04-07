@@ -41,7 +41,7 @@ def _parse_ciscoasa(firewall,chunk,start_num):
     'vlans':'vlan id ([0-9]+[ ]*)',
     'ip':'(no )*ip address[ ]*([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)*[ ]*([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)*[ ]*(standby)*[ ]*([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)*',
     'trunk':'encapsulation dot1q ([0-9]]+[ ]*)',
-    'name': '(no )*nameif( [A-z0-9-_]+)*',
+    'name': '(no )*nameif[ ]*([A-z0-9-_]+)*',
     'security':'(no )*security-level( [0-9]+)*',
     'description':'description ([A-z0-9-_ ]+)'}
     

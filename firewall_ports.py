@@ -40,18 +40,19 @@ def _parse_ciscoasa(firewall,chunk,start_num):
         port.kind = "management"
     else:
         port.kind = "ethernet"
-    port.number[0],port.number[2] = match.group(2),match.group(3)
+    port.number[0],port.number[2] = int(match.group(2)),int(match.group(3))
     port.line_counter += 1
     # Dict containing regex for all possible settings within a port subsection
     re_dict = {'sub_interface':'interface GigabitEthernet([0-9]+)/([0-9]+).([0-9]+)',
                'vlans':'vlan id ([0-9]+[ ]*)',
-               'ip':'(no )*ip address[ ]*([0-9]+.[0-9]+.[0-9]+.[0-9]+)*[ ]*([0-9]+.[0-9]+.[0-9]+.[0-9])*',
+               'ip':'(no )*ip address[ ]*([0-9]+.[0-9]+.[0-9]+.[0-9]+)*[ ]*([0-9]+.[0-9]+.[0-9]+.[0-9]+)*',
                'trunk':'encapsulation dot1q ([0-9]]+[ ]*)',
-               'name': '(no )*nameif( [A-z0-9-_]+)*',
+               'name': '(no )*nameif[ ]*([A-z0-9-_]+)*',
                'lag': 'channel-group ([0-9]+) mode (active|passive)',
                'security':'(no )*security-level( [0-9]+)*',
                'description':'description ([A-z0-9-_ ]+)'}
-    # Check for subinterfaces 
+    # Check for subinterfaces. Cisco ASA subinterfaces are the equivalent of VLAN interfaces on
+    # other devices 
     subinterfaces = False
     for line in port.text[1:]:
         match = re.search(re_dict['sub_interface'],line)
