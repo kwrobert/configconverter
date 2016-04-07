@@ -98,6 +98,7 @@ def main():
         print set(firewall.lines_parsed.keys()).intersection(firewall.lines_missed.keys()) 
     for line_num in sorted(firewall.lines_missed.keys()):
         print "%d: %s"%(line_num,firewall.lines_missed[line_num])
-    
+
+    fw.write_config(args.dest_vendor,args.dest_OS,args.dest_config,firewall)
 if __name__ == '__main__':
     main()

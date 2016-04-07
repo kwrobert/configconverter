@@ -61,7 +61,18 @@ def parse_config(vendor,firmware,config_path):
     if vendor == 'cisco' and firmware == 'ciscoasa':
         return _parse_ciscoasa(vendor,firmware,config_path)
     else:
-        raise NotImplementedError("Sorry, the vendor and firmware combination you specified \
+        raise NotImplementedError("Sorry, parsing the vendor and firmware combination you specified \
+        is not supported")
+#-----------------------------------------------------------------------------------------------------#
+def write_config(vendor,firmware,dest_path,firewall):
+    """Call the correct parser function based on vendor and OS"""
+
+    if vendor == 'cisco' and firmware == 'ciscoasa':
+        return _write_ciscoasa(dest_path,firewall)
+    elif vendor == 'fortinet' and firmware == 'testfortiOS':
+        return _write_fortinet(dest_path,firewall)
+    else:
+        raise NotImplementedError("Sorry, writing the vendor and firmware combination you specified \
         is not supported")
 #####################################################################################################
 def _parse_ciscoasa(vendor,firmware,config_path):
@@ -99,7 +110,7 @@ def _parse_ciscoasa(vendor,firmware,config_path):
             firewall.lines_missed[firewall.line_counter] = line
             firewall.line_counter +=1
     return firewall
-#####################################################################################################
+#-----------------------------------------------------------------------------------------------------#
 def _parse_ciscoasa_port(firewall,start_line):
     # Build out the chunk (includes the line the chunk starts on) and pass it into the parser
     # for the subobject. Pass in the starting line number of the chunk so the subobject can add
@@ -129,7 +140,7 @@ def _parse_ciscoasa_port(firewall,start_line):
     #    for value in dir(port):
     #        print "VALUE: ",value
     #    print port.vlans
-
+#-----------------------------------------------------------------------------------------------------#
 def _parse_ciscoasa_lag(firewall,start_line):
     # Build out the chunk (includes the line the chunk starts on) and pass it into the parser
     # for the subobject. Pass in the starting line number of the chunk so the subobject can add
@@ -158,4 +169,14 @@ def _parse_ciscoasa_lag(firewall,start_line):
     #        print "VALUE: ",value
     #    for value in dir(port):
     #        print "VALUE: ",value
-    #    print port.vlans   
+    #    print port.vlans  
+#-----------------------------------------------------------------------------------------------------#
+def _write_ciscoasa(dest_path,firewall):
+    print "Writing cisco asa config!"
+    print firewall
+    print dest_path
+#####################################################################################################
+def _write_fortinet(dest_path,firewall):
+    print "Writing fortinet config from firewall"
+    print firewall
+    print dest_path
