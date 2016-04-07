@@ -190,6 +190,7 @@ def _write_fortinet(dest_path,firewall):
     with open(dest_path,'w+') as dest_file:
         _write_fortinet_ports(dest_file,firewall)
         _write_fortinet_lags(dest_file,firewall)
+        _write_fortinet_vlanifaces(dest_file,firewall)
         dest_file.write("end\n")
 #---------------------------------------------------------------------------------------------------#
 def _write_fortinet_ports(out_file,firewall):
@@ -223,7 +224,25 @@ def _write_fortinet_lags(out_file,firewall):
         print lag
         print vars(lag)
         if lag.name:
-            out_file.write('\tedit "%s"'%lag.name)
+            out_file.write('\tedit "%s"\n'%lag.name)
         else:
-            out_file.write('\tedit "TEMPNAME"')
-        out_file.write("\t\tset type aggregate")
+            out_file.write('\tedit "TEMPNAME"\n')
+        out_file.write("\t\tset type aggregate\n")
+        mem_ports = '\t\tset member'
+        for mem_port in lag.get_member_ports():
+            mem_ports += ' "port%d"'%mem_port.number[2]
+        out_file.write(mem_ports+'\n')
+#---------------------------------------------------------------------------------------------------#
+def _write_fortinet_vlanifaces(out_file,firewall):
+    for vlaniface in firewall.vlan_interfaces:
+        print vlaniface
+        print vars(vlaniface)
+        if vlaniface.name:
+            out_file.write('\tedit "%s"\n'%vlaniface.name)
+        else:
+            out_file.write('\tedit "TEMPNAME"\n')
+        mem_ports = '\t\tset member'
+        for mem_port in vlaniface.get_member_ports():
+            mem_ports += ' "port%d"'%mem_port.number[2]
+        out_file.write(mem_ports+'\n')
+

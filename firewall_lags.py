@@ -16,6 +16,13 @@ class LAG(object):
         self.number = None
         self.name = ""
         print "Hello this is LAG of vendor %s with OS %s"%(self.vendor,self.firmware)
+
+    def get_member_ports(self):
+        member_ports = []
+        for port in self.firewall.physical_ports:
+            if port.parent_lag and port.parent_lag['num'] == self.number:
+                member_ports.append(port)
+        return member_ports 
 #####################################################################################################
 def parse_lag(firewall,chunk,start_num):
     """Call the correct parser function based on vendor and OS"""

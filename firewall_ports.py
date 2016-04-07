@@ -106,6 +106,7 @@ def _parse_ciscoasa(firewall,chunk,start_num):
                             # Matt/Brian cuz this may not be necessary
                             elif item == 'lag':
                                 firewall.vlan_interfaces[num].parent_lag.update({'num':int(match.group(1)),'mode':match.group(2)})
+                                port.parent_lag.update({'num':int(match.group(1)),'mode':match.group(2)})
                             elif item == 'security':
                                 if match.group(1):
                                     firewall.vlan_interfaces[num].security = None
