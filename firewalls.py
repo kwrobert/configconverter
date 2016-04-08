@@ -39,7 +39,7 @@ class Firewall(object):
         self.address_objects = []
         self.service_objects = []
         self.lags = []
-        self.vlan_interfaces = {}
+        self.vlan_interfaces = []
         self.routes = {}
         self.service_groups = {}
         self.address_groups = {}
@@ -215,7 +215,7 @@ def _write_fortinet_ports(out_file,firewall):
             out_file.write('\t\tset alias "%s"\n'%port.name)
         
         out_file.write('\t\tset type physical\n')
-        if 'l3addr' in vars(port).keys():
+        if port.l3addr:
             out_file.write('\t\tset ip %s %s\n'%(port.l3addr['ip'],port.l3addr['mask']))
 
 #---------------------------------------------------------------------------------------------------#
@@ -232,6 +232,8 @@ def _write_fortinet_lags(out_file,firewall):
         for mem_port in lag.get_member_ports():
             mem_ports += ' "port%d"'%mem_port.number[2]
         out_file.write(mem_ports+'\n')
+        if lag.l3addr:
+            out_file.write('\t\tset ip %s %s\n'%(lag.l3addr['ip'],lag.l3addr['mask']))
 #---------------------------------------------------------------------------------------------------#
 def _write_fortinet_vlanifaces(out_file,firewall):
     for vlaniface in firewall.vlan_interfaces:
@@ -241,8 +243,10 @@ def _write_fortinet_vlanifaces(out_file,firewall):
             out_file.write('\tedit "%s"\n'%vlaniface.name)
         else:
             out_file.write('\tedit "TEMPNAME"\n')
-        mem_ports = '\t\tset member'
+        mem_ports = '\t\tset interface'
         for mem_port in vlaniface.get_member_ports():
             mem_ports += ' "port%d"'%mem_port.number[2]
         out_file.write(mem_ports+'\n')
-
+        out_file.write("\t\tvlan id %d\n"%vlaniface.number)
+        if vlaniface.l3addr:
+            out_file.write('\t\tset ip %s %s\n'%(vlaniface.l3addr['ip'],vlaniface.l3addr['mask']))

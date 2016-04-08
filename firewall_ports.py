@@ -17,7 +17,23 @@ class Port(object):
         self.parent_lag = {}
         self.number = [None,None,None]
         self.name = ""
+        self.l3addr = {}
         print "Hello this is port of vendor %s with OS %s"%(self.vendor,self.firmware)
+
+class VLANInterface(Port):
+    """The abstract base class for all port objects"""
+
+    def __init__(self,firewall,chunk,start_num):
+        Port.__init__(self,firewall,chunk,start_num)
+        print "Hello this is vlan interface of vendor %s with OS %s"%(self.vendor,self.firmware)
+
+    def get_member_ports(self):
+        member_ports = []
+        for port in self.firewall.physical_ports:
+            if self.number in port.vlans:
+                member_ports.append(port)
+        return member_ports 
+
 #####################################################################################################
 def parse_port(firewall,chunk,start_num):
     """Call the correct parser function based on vendor and OS"""
@@ -49,7 +65,7 @@ def _parse_ciscoasa(firewall,chunk,start_num):
                'trunk':'encapsulation dot1q ([0-9]]+[ ]*)',
                'name': '(no )*nameif[ ]*([A-z0-9-_]+)*',
                'lag': 'channel-group ([0-9]+) mode (active|passive)',
-               'security':'(no )*security-level( [0-9]+)*',
+               'security':'(no )*security-level[ ]*([0-9]+)*',
                'description':'description ([A-z0-9-_ ]+)'}
     # Check for subinterfaces. Cisco ASA subinterfaces are the equivalent of VLAN interfaces on
     # other devices 
@@ -72,18 +88,20 @@ def _parse_ciscoasa(firewall,chunk,start_num):
             if match:
                 # Grab subinterface number from regex match
                 num = match.group(3)
-                # Initialize empty dict within subinterfaces dict to store info about
-                # subinterface
-                firewall.vlan_interfaces[num] = {}
+                # Initialize vlan interface object 
+                vlaniface = VLANInterface(firewall,[],port.line_counter)
+                vlaniface.number = int(num)
+                port.vlans.append(int(num))
+                firewall.vlan_interfaces.append(vlaniface)
                 # Make sure the firewall knows we parsed this line
                 firewall.lines_parsed[port.start+port.line_counter] = line
                 port.line_counter += 1
-                print port.line_counter
                 # While we haven't run into another subinterface collect info about this
                 # subinterface
                 while (port.line_counter < len(port.text)) and (not
                         re.search(re_dict['sub_interface'],port.text[port.line_counter])):
                     line = port.text[port.line_counter]
+                    vlaniface.text.append(line)
                     for item,regex in re_dict.iteritems():
                         match = re.search(regex,line)
                         if match:
@@ -94,31 +112,28 @@ def _parse_ciscoasa(firewall,chunk,start_num):
                                 vlans = []
                                 for vlan in all_vlans:
                                     vlans.append(vlan)
-                                firewall.vlan_interfaces[num]['vlans'] = vlans
+                                vlaniface.vlans = vlaniface.vlans + vlans
                             elif item == 'ip':
                                 if not match.group(1):
-                                    entries = {'ip':match.group(2), 'mask': match.group(3)}
-                                    firewall.vlan_interfaces[num].update(entries)
+                                    vlaniface.l3addr = {'ip':match.group(2), 'mask': match.group(3)}
                             elif item == 'name':
                                 if not match.group(1):
-                                    firewall.vlan_interfaces[num].update({'name':match.group(2)})
+                                    vlaniface.name = match.group(2)
                             # TODO: Can subinterfaces be members of a port channel? Ask
                             # Matt/Brian cuz this may not be necessary
                             elif item == 'lag':
-                                firewall.vlan_interfaces[num].parent_lag.update({'num':int(match.group(1)),'mode':match.group(2)})
+                                vlaniface.parent_lag.update({'num':int(match.group(1)),'mode':match.group(2)})
                                 port.parent_lag.update({'num':int(match.group(1)),'mode':match.group(2)})
                             elif item == 'security':
                                 if match.group(1):
-                                    firewall.vlan_interfaces[num].security = None
+                                    vlaniface.security = None
                                 else:
-                                    firewall.vlan_interfaces[num].security = int(match.group(2))
-
-                            break
-                            
+                                    vlaniface.security = int(match.group(2))
+                        break
                     if not match:
                         firewall.lines_missed[port.start+port.line_counter] = line
-                        port.line_counter += 1            
-                    print port.line_counter  
+                        port.line_counter += 1
+                print port.line_counter  
     else:
         # Its a regular interface
         for line in port.text[1:]:
