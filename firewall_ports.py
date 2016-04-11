@@ -119,8 +119,6 @@ def _parse_ciscoasa(firewall,chunk,start_num):
                             elif item == 'name':
                                 if not match.group(1):
                                     vlaniface.name = match.group(2)
-                            # TODO: Can subinterfaces be members of a port channel? Ask
-                            # Matt/Brian cuz this may not be necessary
                             elif item == 'lag':
                                 vlaniface.parent_lag.update({'num':int(match.group(1)),'mode':match.group(2)})
                                 port.parent_lag.update({'num':int(match.group(1)),'mode':match.group(2)})
@@ -129,7 +127,7 @@ def _parse_ciscoasa(firewall,chunk,start_num):
                                     vlaniface.security = None
                                 else:
                                     vlaniface.security = int(match.group(2))
-                        break
+                            break
                     if not match:
                         firewall.lines_missed[port.start+port.line_counter] = line
                         port.line_counter += 1

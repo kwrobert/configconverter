@@ -1,3 +1,4 @@
 trigger/
 ciscoconfparse/
 *.swp
+fortinet_ip.txt

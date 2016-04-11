@@ -22,6 +22,8 @@ import re
 import os
 import firewall_ports as fwp
 import firewall_lags as fwl
+import firewall_addressobj as fwa
+import firewall_serviceobj as fws
 #####################################################################################################
 class Firewall(object):
     
@@ -78,14 +80,20 @@ def write_config(vendor,firmware,dest_path,firewall):
 #####################################################################################################
 #                               CISCO ASA FUNCTIONS
 #####################################################################################################
-
+# TODO: Someday I think I could use a decorator and a single "parse_object" function to replace this whole 
+# mess down here, because the code in each function below is pretty much identical except for the
+# function called to actually parse the chunk of text corresponding to the object and instantiate
+# the object. I could probably use the if/elif clause in _parse_ciscoasa to pass the object parsing
+# function into a generic "parse_object(firewall,start_line,parser) function and save on a whole
+# shit-ton of duplicated code. 
 def _parse_ciscoasa(vendor,firmware,config_path):
     # Initialize firewall 
     firewall = Firewall(vendor,firmware,config_path)
     # The dictionary of config items the parser understands, and their regex's 
     re_dict = {'port':'interface (GigabitEthernet|Management)[0-9]+/[0-9]+',
                'lag':'interface Port-channel([0-9]+)',
-               'address-object':'^object network','comment':'^[#,!,:]'}
+               'address-object':'^object network','comment':'^[#,!,:]',
+               'service-object':'^object service'}
     # Compare the line to all the available regex's. Execute the appropiate parser for the sub
     # object 
     while firewall.line_counter < len(firewall.lines):
@@ -106,6 +114,8 @@ def _parse_ciscoasa(vendor,firmware,config_path):
                     _parse_ciscoasa_lag(firewall,line)
                 elif obj == 'address-object':
                     _parse_ciscoasa_addressobj(firewall,line)
+                elif obj == 'service-object':
+                    _parse_ciscoasa_serviceobj(firewall,line)
                 elif obj == 'comment':
                     firewall.lines_parsed[firewall.line_counter] = line
                     firewall.line_counter += 1
@@ -123,7 +133,7 @@ def _parse_ciscoasa_port(firewall,start_line):
     firewall.lines_parsed[firewall.line_counter] = start_line
     start_num = firewall.line_counter
     firewall.line_counter += 1
-    while firewall.lines[firewall.line_counter][0] == " ":
+    while firewall.line_counter < len(firewall.lines) and firewall.lines[firewall.line_counter][0] == " ":
         chunk.append(firewall.lines[firewall.line_counter])
         firewall.line_counter += 1
     #print "###############################"
@@ -153,7 +163,7 @@ def _parse_ciscoasa_lag(firewall,start_line):
     firewall.lines_parsed[firewall.line_counter] = start_line
     start_num = firewall.line_counter
     firewall.line_counter += 1
-    while firewall.lines[firewall.line_counter][0] == " ":
+    while firewall.line_counter < len(firewall.lines) and firewall.lines[firewall.line_counter][0] == " ":
         chunk.append(firewall.lines[firewall.line_counter])
         firewall.line_counter += 1
     #print "###############################"
@@ -175,6 +185,30 @@ def _parse_ciscoasa_lag(firewall,start_line):
     #        print "VALUE: ",value
     #    print port.vlans  
 #-----------------------------------------------------------------------------------------------------#
+def _parse_ciscoasa_addressobj(firewall,start_line):
+    chunk = [start_line]
+    firewall.lines_parsed[firewall.line_counter] = start_line
+    start_num = firewall.line_counter
+    firewall.line_counter += 1
+    while firewall.line_counter < len(firewall.lines) and firewall.lines[firewall.line_counter][0] == " ":
+        chunk.append(firewall.lines[firewall.line_counter])
+        firewall.line_counter += 1
+        print firewall.line_counter
+    addrobj = fwa.parse_addrobj(firewall,chunk,start_num)
+    firewall.address_objects.append(addrobj)
+#---------------------------------------------------------------------------------------------------#
+def _parse_ciscoasa_serviceobj(firewall,start_line):
+    chunk = [start_line]
+    firewall.lines_parsed[firewall.line_counter] = start_line
+    start_num = firewall.line_counter
+    firewall.line_counter += 1
+    while firewall.line_counter < len(firewall.lines) and firewall.lines[firewall.line_counter][0] == " ":
+        chunk.append(firewall.lines[firewall.line_counter])
+        firewall.line_counter += 1
+        print firewall.line_counter
+    servobj = fws.parse_servobj(firewall,chunk,start_num)
+    firewall.service_objects.append(servobj)
+#---------------------------------------------------------------------------------------------------#
 def _write_ciscoasa(dest_path,firewall):
     print "Writing cisco asa config!"
     print firewall
@@ -192,6 +226,7 @@ def _write_fortinet(dest_path,firewall):
         _write_fortinet_lags(dest_file,firewall)
         _write_fortinet_vlanifaces(dest_file,firewall)
         dest_file.write("end\n")
+        _write_fortinet_addrobjs(dest_file,firewall)
 #---------------------------------------------------------------------------------------------------#
 def _write_fortinet_ports(out_file,firewall):
     # Some firewall zero index their ports but fortinets don't, so fix that
@@ -250,3 +285,12 @@ def _write_fortinet_vlanifaces(out_file,firewall):
         out_file.write("\t\tvlan id %d\n"%vlaniface.number)
         if vlaniface.l3addr:
             out_file.write('\t\tset ip %s %s\n'%(vlaniface.l3addr['ip'],vlaniface.l3addr['mask']))
+#---------------------------------------------------------------------------------------------------#
+def _write_fortinet_addrobjs(out_file,firewall):
+    out_file.write("config firewall address\n")
+    for addrobj in firewall.address_objects:
+        out_file.write('\tedit "%s"\n'%addrobj.name)
+        out_file.write('\t\tset type subnet\n')
+        out_file.write('\t\tset address %s %s\n'%(addrobj.network_address,addrobj.mask))
+        out_file.write('\tnext\n')
+    out_file.write("end\n")
