@@ -1,0 +1,4 @@
+1) It might be a good idea to create setters for all the attributes of each object contained within
+a firewall. This will prevent attributes from having illegal types, will ensure their values are in
+the correct form (spelling, case, etc.), and will ensure legal values. This will take the logic for
+setting attributes out of multiple places in the code and put in it one, self contained method. 

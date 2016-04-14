@@ -2,3 +2,5 @@ trigger/
 ciscoconfparse/
 *.swp
 fortinet_ip.txt
+*.pyc
+exampleconfigs/*.txt

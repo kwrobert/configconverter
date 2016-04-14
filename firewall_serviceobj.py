@@ -70,7 +70,7 @@ class ServiceObject(object):
         self.name = ""
         self.protocol = ""
         self.strt_srcport = None 
-        self.dest_srcport = None 
+        self.end_srcport = None 
         self.srcop = ""
         self.destop = ""
         self.strt_destport = None

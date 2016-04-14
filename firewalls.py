@@ -227,6 +227,7 @@ def _write_fortinet(dest_path,firewall):
         _write_fortinet_vlanifaces(dest_file,firewall)
         dest_file.write("end\n")
         _write_fortinet_addrobjs(dest_file,firewall)
+        _write_fortinet_serviceobjs(dest_file,firewall)
 #---------------------------------------------------------------------------------------------------#
 def _write_fortinet_ports(out_file,firewall):
     # Some firewall zero index their ports but fortinets don't, so fix that
@@ -256,8 +257,6 @@ def _write_fortinet_ports(out_file,firewall):
 #---------------------------------------------------------------------------------------------------#
 def _write_fortinet_lags(out_file,firewall):
     for lag in firewall.lags:
-        print lag
-        print vars(lag)
         if lag.name:
             out_file.write('\tedit "%s"\n'%lag.name)
         else:
@@ -272,8 +271,6 @@ def _write_fortinet_lags(out_file,firewall):
 #---------------------------------------------------------------------------------------------------#
 def _write_fortinet_vlanifaces(out_file,firewall):
     for vlaniface in firewall.vlan_interfaces:
-        print vlaniface
-        print vars(vlaniface)
         if vlaniface.name:
             out_file.write('\tedit "%s"\n'%vlaniface.name)
         else:
@@ -290,7 +287,41 @@ def _write_fortinet_addrobjs(out_file,firewall):
     out_file.write("config firewall address\n")
     for addrobj in firewall.address_objects:
         out_file.write('\tedit "%s"\n'%addrobj.name)
-        out_file.write('\t\tset type subnet\n')
-        out_file.write('\t\tset address %s %s\n'%(addrobj.network_address,addrobj.mask))
+        if addrobj.kind == 'subnet':
+            out_file.write('\t\tset type subnet\n')
+            out_file.write('\t\tset address %s %s\n'%(addrobj.network_address,addrobj.mask))
+            out_file.write('\tnext\n')
+        elif addrobj.kind == 'range':
+            out_file.write('\t\tset type iprange\n')
+            out_file.write('\t\tset end-ip %s\n'%addrobj.end_ip)
+            out_file.write('\t\tset start-ip %s\n'%addrobj.start_ip)
+            out_file.write('\tnext\n')
+    out_file.write("end\n")
+#-----------------------------------------------------------------------------------------------------#
+def _write_fortinet_serviceobjs(out_file,firewall):
+    out_file.write("config firewall service custom\n")
+    for servobj in firewall.service_objects:
+        print servobj
+        print vars(servobj)
+        out_file.write('\tedit "%s"\n'%servobj.name)
+        if servobj.protocol == 'icmp':
+            out_file.write('\t\tset protocol ICMP\n')
+        elif servobj.protocol == 'tcp':
+            out_file.write('\t\tset protocol TCP\n')
+            if servobj.strt_destport and servobj.end_destport:
+                out_file.write('\t\tset tcp-portrange %d-%d\n'%(servobj.strt_destport,servobj.end_destport))
+            elif servobj.strt_destport:
+                out_file.write('\t\tset tcp-portrange %d\n'%servobj.strt_destport)
+            else:
+                print "NO TCP DESTINATION PORTS!"
+        elif servobj.protocol == 'udp':
+            out_file.write('\t\tset protocol UDP\n')
+            out_file.write('\t\tset tcp-portrange 0:0\n')
+            if servobj.strt_destport and servobj.end_destport:
+                out_file.write('\t\tset udp-portrange %d-%d\n'%(servobj.strt_destport,servobj.end_destport))
+            elif servobj.strt_destport:
+                out_file.write('\t\tset udp-portrange %d\n'%servobj.strt_destport)
+            else:
+                print "NO UDP DESTINATION PORTS!"
         out_file.write('\tnext\n')
     out_file.write("end\n")
