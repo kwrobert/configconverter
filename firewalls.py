@@ -80,12 +80,7 @@ def write_config(vendor,firmware,dest_path,firewall):
 #####################################################################################################
 #                               CISCO ASA FUNCTIONS
 #####################################################################################################
-# TODO: Someday I think I could use a decorator and a single "parse_object" function to replace this whole 
-# mess down here, because the code in each function below is pretty much identical except for the
-# function called to actually parse the chunk of text corresponding to the object and instantiate
-# the object. I could probably use the if/elif clause in _parse_ciscoasa to pass the object parsing
-# function into a generic "parse_object(firewall,start_line,parser) function and save on a whole
-# shit-ton of duplicated code. 
+ 
 def _parse_ciscoasa(vendor,firmware,config_path):
     # Initialize firewall 
     firewall = Firewall(vendor,firmware,config_path)
@@ -109,13 +104,17 @@ def _parse_ciscoasa(vendor,firmware,config_path):
                 print "Found a %s on line %d"%(obj,firewall.line_counter)
                 firewall.lines_parsed[firewall.line_counter] = line
                 if obj == 'port':
-                    _parse_ciscoasa_port(firewall,line)
+                    #_parse_ciscoasa_port(firewall,line)
+                    _parse_asa_object(firewall,line,fwp.parse_port,firewall.physical_ports)
                 elif obj == 'lag':
-                    _parse_ciscoasa_lag(firewall,line)
+                    #_parse_ciscoasa_lag(firewall,line)
+                    _parse_asa_object(firewall,line,fwl.parse_lag,firewall.lags)
                 elif obj == 'address-object':
-                    _parse_ciscoasa_addressobj(firewall,line)
+                    #_parse_ciscoasa_addressobj(firewall,line)
+                    _parse_asa_object(firewall,line,fwa.parse_addrobj,firewall.address_objects)
                 elif obj == 'service-object':
-                    _parse_ciscoasa_serviceobj(firewall,line)
+                    #_parse_ciscoasa_serviceobj(firewall,line)
+                    _parse_asa_object(firewall,line,fws.parse_servobj,firewall.service_objects)
                 elif obj == 'comment':
                     firewall.lines_parsed[firewall.line_counter] = line
                     firewall.line_counter += 1
@@ -125,7 +124,7 @@ def _parse_ciscoasa(vendor,firmware,config_path):
             firewall.line_counter +=1
     return firewall
 #-----------------------------------------------------------------------------------------------------#
-def _parse_ciscoasa_port(firewall,start_line):
+def _parse_asa_object(firewall,start_line,parse_func,container):
     # Build out the chunk (includes the line the chunk starts on) and pass it into the parser
     # for the subobject. Pass in the starting line number of the chunk so the subobject can add
     # lines parsed and lines missed to the corresponding dictionaries correctly
@@ -136,78 +135,8 @@ def _parse_ciscoasa_port(firewall,start_line):
     while firewall.line_counter < len(firewall.lines) and firewall.lines[firewall.line_counter][0] == " ":
         chunk.append(firewall.lines[firewall.line_counter])
         firewall.line_counter += 1
-    #print "###############################"
-    #print chunk
-    #print "###############################"
-    port = fwp.parse_port(firewall,chunk,start_num)
-    if port.line_counter+port.start != firewall.line_counter:
-        print "Firewall: ",firewall.line_counter
-        print "Port: ",port.line_counter 
-        print "YOU FUCKED UP" 
-        quit()
-    firewall.physical_ports.append(port)
-    #print firewall.physical_ports
-    #for port in firewall.physical_ports:
-    #    for key, value in vars(port).iteritems():
-    #        print "KEY: ", key
-    #        print "VALUE: ",value
-    #    for value in dir(port):
-    #        print "VALUE: ",value
-    #    print port.vlans
-#-----------------------------------------------------------------------------------------------------#
-def _parse_ciscoasa_lag(firewall,start_line):
-    # Build out the chunk (includes the line the chunk starts on) and pass it into the parser
-    # for the subobject. Pass in the starting line number of the chunk so the subobject can add
-    # lines parsed and lines missed to the corresponding dictionaries correctly
-    chunk = [start_line]
-    firewall.lines_parsed[firewall.line_counter] = start_line
-    start_num = firewall.line_counter
-    firewall.line_counter += 1
-    while firewall.line_counter < len(firewall.lines) and firewall.lines[firewall.line_counter][0] == " ":
-        chunk.append(firewall.lines[firewall.line_counter])
-        firewall.line_counter += 1
-    #print "###############################"
-    #print chunk
-    #print "###############################"
-    lag = fwl.parse_lag(firewall,chunk,start_num)
-    if lag.line_counter+lag.start != firewall.line_counter:
-        print "Firewall: ",firewall.line_counter
-        print "Port: ",port.line_counter 
-        print "YOU FUCKED UP" 
-        quit()
-    firewall.lags.append(lag)
-    #print firewall.physical_ports
-    #for port in firewall.physical_ports:
-    #    for key, value in vars(port).iteritems():
-    #        print "KEY: ", key
-    #        print "VALUE: ",value
-    #    for value in dir(port):
-    #        print "VALUE: ",value
-    #    print port.vlans  
-#-----------------------------------------------------------------------------------------------------#
-def _parse_ciscoasa_addressobj(firewall,start_line):
-    chunk = [start_line]
-    firewall.lines_parsed[firewall.line_counter] = start_line
-    start_num = firewall.line_counter
-    firewall.line_counter += 1
-    while firewall.line_counter < len(firewall.lines) and firewall.lines[firewall.line_counter][0] == " ":
-        chunk.append(firewall.lines[firewall.line_counter])
-        firewall.line_counter += 1
-        print firewall.line_counter
-    addrobj = fwa.parse_addrobj(firewall,chunk,start_num)
-    firewall.address_objects.append(addrobj)
-#---------------------------------------------------------------------------------------------------#
-def _parse_ciscoasa_serviceobj(firewall,start_line):
-    chunk = [start_line]
-    firewall.lines_parsed[firewall.line_counter] = start_line
-    start_num = firewall.line_counter
-    firewall.line_counter += 1
-    while firewall.line_counter < len(firewall.lines) and firewall.lines[firewall.line_counter][0] == " ":
-        chunk.append(firewall.lines[firewall.line_counter])
-        firewall.line_counter += 1
-        print firewall.line_counter
-    servobj = fws.parse_servobj(firewall,chunk,start_num)
-    firewall.service_objects.append(servobj)
+    obj = parse_func(firewall,chunk,start_num)
+    container.append(obj)
 #---------------------------------------------------------------------------------------------------#
 def _write_ciscoasa(dest_path,firewall):
     print "Writing cisco asa config!"
