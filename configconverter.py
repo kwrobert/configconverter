@@ -87,6 +87,7 @@ def main():
     check_args(args)
    
     firewall = fw.parse_config(args.src_vendor,args.src_OS,args.src_config)
+            
     print firewall.vendor
     print firewall.firmware
     print "Here are the lines we parsed"
@@ -98,7 +99,13 @@ def main():
         print set(firewall.lines_parsed.keys()).intersection(firewall.lines_missed.keys()) 
     for line_num in sorted(firewall.lines_missed.keys()):
         print "%d: %s"%(line_num,firewall.lines_missed[line_num])
+    
+    missfile = os.path.join(os.path.dirname(args.dest_config),"lines_missed.txt")
+    with open(missfile,'w+') as afile:
+        for num in sorted(firewall.lines_missed.keys()):
+            afile.write("%d: %s\n"%(num,firewall.line_missed[num]))
+            
+    #fw.write_config(args.dest_vendor,args.dest_OS,args.dest_config,firewall)
 
-    fw.write_config(args.dest_vendor,args.dest_OS,args.dest_config,firewall)
 if __name__ == '__main__':
     main()
