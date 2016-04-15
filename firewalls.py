@@ -225,6 +225,10 @@ def _write_fortinet_addrobjs(out_file,firewall):
             out_file.write('\t\tset end-ip %s\n'%addrobj.end_ip)
             out_file.write('\t\tset start-ip %s\n'%addrobj.start_ip)
             out_file.write('\tnext\n')
+        elif addrobj.kind == 'host':
+            out_file.write('\t\tset type subnet\n')
+            out_file.write('\t\tset address %s %s\n'%(addrobj.network_address,addrobj.mask))
+            out_file.write('\tnext\n')
     out_file.write("end\n")
 #-----------------------------------------------------------------------------------------------------#
 def _write_fortinet_serviceobjs(out_file,firewall):
@@ -237,20 +241,40 @@ def _write_fortinet_serviceobjs(out_file,firewall):
             out_file.write('\t\tset protocol ICMP\n')
         elif servobj.protocol == 'tcp':
             out_file.write('\t\tset protocol TCP\n')
-            if servobj.strt_destport and servobj.end_destport:
+            if servobj.strt_destport and servobj.end_destport and servobj.strt_srcport and servobj.end_srcport:
+                    out_file.write('\t\tset tcp-portrange %d-%d:%d-%d\n'%(
+                        servobj.strt_destport,servobj.end_destport,servobj.strt_srcport,servobj.end_srcport))
+            elif servobj.strt_destport and servobj.end_destport and servobj.strt_srcport:
+                out_file.write('\t\tset tcp-portrange %d-%d:%d\n'%(
+                        servobj.strt_destport,servobj.end_destport,servobj.strt_srcport))
+            elif servobj.strt_destport and servobj.end_destport:
                 out_file.write('\t\tset tcp-portrange %d-%d\n'%(servobj.strt_destport,servobj.end_destport))
             elif servobj.strt_destport:
                 out_file.write('\t\tset tcp-portrange %d\n'%servobj.strt_destport)
+            elif not servobj.strt_destport and not servobj.end_destport and servobj.strt_srcport and servobj.end_srcport:
+                out_file.write('\t\tset tcp-portrange 1-65535:%d-%d\n'%(servobj.strt_srcport,servobj.end_srcport))
+            elif not servobj.strt_destport and not servobj.end_destport and servobj.strt_srcport:
+                out_file.write('\t\tset tcp-portrange 1-65535:%d\n'%(servobj.strt_srcport))
             else:
-                print "NO TCP DESTINATION PORTS!"
+                print "THE TCP IF/ELIF CLAUSE MISSED A CASE!"
         elif servobj.protocol == 'udp':
             out_file.write('\t\tset protocol UDP\n')
             out_file.write('\t\tset tcp-portrange 0:0\n')
-            if servobj.strt_destport and servobj.end_destport:
+            if servobj.strt_destport and servobj.end_destport and servobj.strt_srcport and servobj.end_srcport:
+                    out_file.write('\t\tset udp-portrange %d-%d:%d-%d\n'%(
+                        servobj.strt_destport,servobj.end_destport,servobj.strt_srcport,servobj.end_srcport))
+            elif servobj.strt_destport and servobj.end_destport and servobj.strt_srcport:
+                out_file.write('\t\tset udp-portrange %d-%d:%d\n'%(
+                        servobj.strt_destport,servobj.end_destport,servobj.strt_srcport))
+            elif servobj.strt_destport and servobj.end_destport:
                 out_file.write('\t\tset udp-portrange %d-%d\n'%(servobj.strt_destport,servobj.end_destport))
             elif servobj.strt_destport:
                 out_file.write('\t\tset udp-portrange %d\n'%servobj.strt_destport)
+            elif not servobj.strt_destport and not servobj.end_destport and servobj.strt_srcport and servobj.end_srcport:
+                out_file.write('\t\tset udp-portrange 1-65535:%d-%d\n'%(servobj.strt_srcport,servobj.end_srcport))
+            elif not servobj.strt_destport and not servobj.end_destport and servobj.strt_srcport:
+                out_file.write('\t\tset udp-portrange 1-65535:%d\n'%(servobj.strt_srcport))
             else:
-                print "NO UDP DESTINATION PORTS!"
-        out_file.write('\tnext\n')
+                print "THE UDP IF/ELIF CLAUSE MISSED A CASE!"
+            out_file.write('\tnext\n')
     out_file.write("end\n")
