@@ -24,6 +24,7 @@ import firewall_ports as fwp
 import firewall_lags as fwl
 import firewall_addressobj as fwa
 import firewall_serviceobj as fws
+import firewall_objectgroup as fwo
 #####################################################################################################
 class Firewall(object):
     
@@ -43,8 +44,8 @@ class Firewall(object):
         self.lags = []
         self.vlan_interfaces = []
         self.routes = {}
-        self.service_groups = {}
-        self.address_groups = {}
+        self.service_groups = []
+        self.address_groups = []
         print "Hello, I am a firewall of vendor %s with firmware %s"%(self.vendor,self.firmware)
         # The first thing we need to do is get all the lines of the file, strip any newlines,
         # and remove any blank line. We write all nonblank lines to another file for the sake of
@@ -88,7 +89,9 @@ def _parse_ciscoasa(vendor,firmware,config_path):
     re_dict = {'port':'interface (GigabitEthernet|Management)[0-9]+/[0-9]+',
                'lag':'interface Port-channel([0-9]+)',
                'address-object':'^object network','comment':'^[#,!,:]',
-               'service-object':'^object service'}
+               'service-object':'^object service',
+               'address-group':'^object-group network',
+               'service-group':'^object-group service'}
     # Compare the line to all the available regex's. Execute the appropiate parser for the sub
     # object 
     while firewall.line_counter < len(firewall.lines):
@@ -104,20 +107,20 @@ def _parse_ciscoasa(vendor,firmware,config_path):
                 print "Found a %s on line %d"%(obj,firewall.line_counter)
                 firewall.lines_parsed[firewall.line_counter] = line
                 if obj == 'port':
-                    #_parse_ciscoasa_port(firewall,line)
                     _parse_asa_object(firewall,line,fwp.parse_port,firewall.physical_ports)
                 elif obj == 'lag':
-                    #_parse_ciscoasa_lag(firewall,line)
                     _parse_asa_object(firewall,line,fwl.parse_lag,firewall.lags)
                 elif obj == 'address-object':
-                    #_parse_ciscoasa_addressobj(firewall,line)
                     _parse_asa_object(firewall,line,fwa.parse_addrobj,firewall.address_objects)
                 elif obj == 'service-object':
-                    #_parse_ciscoasa_serviceobj(firewall,line)
                     _parse_asa_object(firewall,line,fws.parse_servobj,firewall.service_objects)
                 elif obj == 'comment':
                     firewall.lines_parsed[firewall.line_counter] = line
                     firewall.line_counter += 1
+                elif obj == 'address-group':
+                    _parse_asa_object(firewall,line,fwo.parse_addrgroup,firewall.address_groups)
+                elif obj == 'service-group':
+                    _parse_asa_object(firewall,line,fwo.parse_servgroup,firewall.service_groups)
                 break    
         if not match:
             firewall.lines_missed[firewall.line_counter] = line
@@ -234,8 +237,6 @@ def _write_fortinet_addrobjs(out_file,firewall):
 def _write_fortinet_serviceobjs(out_file,firewall):
     out_file.write("config firewall service custom\n")
     for servobj in firewall.service_objects:
-        print servobj
-        print vars(servobj)
         out_file.write('\tedit "%s"\n'%servobj.name)
         if servobj.protocol == 'icmp':
             out_file.write('\t\tset protocol ICMP\n')
