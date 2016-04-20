@@ -104,8 +104,6 @@ def main():
     with open(missfile,'w+') as afile:
         for num in sorted(firewall.lines_missed.keys()):
             afile.write("%d: %s\n"%(num,firewall.lines_missed[num]))
-    print firewall.address_groups
-    print firewall.service_groups
     fw.write_config(args.dest_vendor,args.dest_OS,args.dest_config,firewall)
 
 if __name__ == '__main__':
