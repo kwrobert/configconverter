@@ -2,6 +2,11 @@
 a firewall. This will prevent attributes from having illegal types, will ensure their values are in
 the correct form (spelling, case, etc.), and will ensure legal values. This will take the logic for
 setting attributes out of multiple places in the code and put in it one, self contained method.
+
 2) Need to modify configconverter.py so the OS versions have a legitimate input instead of the test
 names I have as placeholders right now. Should look something like
-OSNAME-MAJORVERSION.MINORVERSION.BUILD and we can parse accordingly. 
+OSNAME-MAJORVERSION.MINORVERSION.BUILD and we can parse accordingly.
+
+3) Adding logging to the code would be useful for debugging purposes. Would need a parent logger in
+firewalls.py, with child loggers for each of the separate files/modules. Send all logging levels to
+a file, and only INFO or above to console. 
