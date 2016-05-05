@@ -25,6 +25,7 @@ import firewall_lags as fwl
 import firewall_addressobj as fwa
 import firewall_serviceobj as fws
 import firewall_objectgroup as fwo
+import firewall_acl as fwacl
 #####################################################################################################
 class Firewall(object):
     
@@ -46,6 +47,7 @@ class Firewall(object):
         self.routes = {}
         self.service_groups = []
         self.address_groups = []
+        self.ACLs = []
         print "Hello, I am a firewall of vendor %s with firmware %s"%(self.vendor,self.firmware)
         # The first thing we need to do is get all the lines of the file, strip any newlines,
         # and remove any blank line. We write all nonblank lines to another file for the sake of
@@ -57,6 +59,20 @@ class Firewall(object):
             with open(nbfile,'w+') as nbconf:
                 for line in self.lines:
                     nbconf.write(line+"\n")
+    #---------------------------------------------------------------------------------------------------#
+    def has_acl_of_name(self,name):
+        """Returns True if ACL instance with same name exists in firewall ACL list, otherwise
+        returns False"""
+        return any(map(lambda acl: acl.name == name, self.ACLs))
+    #---------------------------------------------------------------------------------------------------#
+    def get_acl_by_name(self,name):
+        """Returns the ACL with the provided name"""
+        acls = filter(lambda acl: acl.name == name, self.ACLs)
+        if len(acls) > 1:
+            print "WOAH FOUND SOME ACLS WITH THE SAME NAME"
+            quit()
+        else:
+            return acls[0]
 #####################################################################################################
 def parse_config(vendor,firmware,config_path):
     """Call the correct parser function based on vendor and OS"""
@@ -91,7 +107,8 @@ def _parse_ciscoasa(vendor,firmware,config_path):
                'address-object':'^object network','comment':'^[#,!,:]',
                'service-object':'^object service',
                'address-group':'^object-group network',
-               'service-group':'^object-group service'}
+               'service-group':'^object-group service',
+               'access-list':'^access-list'}
     # Compare the line to all the available regex's. Execute the appropiate parser for the sub
     # object 
     while firewall.line_counter < len(firewall.lines):
@@ -120,6 +137,8 @@ def _parse_ciscoasa(vendor,firmware,config_path):
                     _parse_asa_object(firewall,line,fwo.parse_addrgroup,firewall.address_groups)
                 elif obj == 'service-group':
                     _parse_asa_object(firewall,line,fwo.parse_servgroup,firewall.service_groups)
+                elif obj == 'access-list':
+                    _parse_asa_object(firewall,line,fwacl.parse_ACL,firewall.ACLs)
                 break    
         if not match:
             firewall.lines_missed[firewall.line_counter] = line
@@ -138,7 +157,9 @@ def _parse_asa_object(firewall,start_line,parse_func,container):
         chunk.append(firewall.lines[firewall.line_counter])
         firewall.line_counter += 1
     obj = parse_func(firewall,chunk,start_num)
-    container.append(obj)
+    # This prevents adding duplicates
+    if not obj in container:
+        container.append(obj)
 #---------------------------------------------------------------------------------------------------#
 def _write_ciscoasa(dest_path,firewall):
     print "Writing cisco asa config!"
@@ -160,6 +181,7 @@ def _write_fortinet(dest_path,firewall):
         _write_fortinet_addrobjs(dest_file,firewall)
         _write_fortinet_serviceobjs(dest_file,firewall)
         _write_fortinet_objectgroups(dest_file,firewall)
+        _write_fortinet_acls(dest_file,firewall)
 #---------------------------------------------------------------------------------------------------#
 def _write_fortinet_ports(out_file,firewall):
     # Some firewall zero index their ports but fortinets don't, so fix that
@@ -296,4 +318,8 @@ def _write_fortinet_objectgroups(out_file,firewall):
             out_file.write("\tset comment %s\n"%servgroup.description)
         for memobj in servgroup.member_objects:
             out_file.write("\t\tset member %s\n"%memobj.name)
-        out_file.write("\tend\n") 
+        out_file.write("\tend\n")
+
+def _write_fortinet_acls(out_file,firewall):
+    print "HOLY FUCK GOTTA WRITE SOME FORTINET ACL DUMPING CODE"
+    quit()
