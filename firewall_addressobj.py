@@ -40,7 +40,6 @@ def _parse_ciscoasa(firewall,chunk,start_num):
     # Compare the line to all the available regex's. Execute the appropiate parser for the sub
     # object 
     while addrobj.line_counter < len(addrobj.text):
-        print firewall.line_counter
         line = addrobj.text[addrobj.line_counter]
         #print "LINE: ",line
         for obj,regex in re_dict.iteritems():

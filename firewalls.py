@@ -95,7 +95,6 @@ def _parse_ciscoasa(vendor,firmware,config_path):
     # Compare the line to all the available regex's. Execute the appropiate parser for the sub
     # object 
     while firewall.line_counter < len(firewall.lines):
-        print firewall.line_counter
         line = firewall.lines[firewall.line_counter]
         #print "LINE: ",line
         for obj,regex in re_dict.iteritems():
@@ -160,6 +159,7 @@ def _write_fortinet(dest_path,firewall):
         dest_file.write("end\n")
         _write_fortinet_addrobjs(dest_file,firewall)
         _write_fortinet_serviceobjs(dest_file,firewall)
+        _write_fortinet_objectgroups(dest_file,firewall)
 #---------------------------------------------------------------------------------------------------#
 def _write_fortinet_ports(out_file,firewall):
     # Some firewall zero index their ports but fortinets don't, so fix that
@@ -279,3 +279,21 @@ def _write_fortinet_serviceobjs(out_file,firewall):
                 print "THE UDP IF/ELIF CLAUSE MISSED A CASE!"
             out_file.write('\tnext\n')
     out_file.write("end\n")
+def _write_fortinet_objectgroups(out_file,firewall):
+    print 'WRITING OBJECT GROUPS'
+    out_file.write("config firewall addrgrp\n")
+    for addrgroup in firewall.address_groups:
+        out_file.write("\tedit %s\n"%addrgroup.name)
+        if addrgroup.description:
+            out_file.write("\tset comment %s\n"%addrgroup.description)
+        for memobj in addrgroup.member_objects:
+            out_file.write("\t\tset member %s\n"%memobj.name)
+        out_file.write("\tend\n")
+    out_file.write("config firewall service group\n")
+    for servgroup in firewall.service_groups:
+        out_file.write("\tedit %s\n"%servgroup.name)
+        if servgroup.description:
+            out_file.write("\tset comment %s\n"%servgroup.description)
+        for memobj in servgroup.member_objects:
+            out_file.write("\t\tset member %s\n"%memobj.name)
+        out_file.write("\tend\n") 

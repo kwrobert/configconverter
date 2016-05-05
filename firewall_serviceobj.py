@@ -3,6 +3,9 @@ import re
 asa_port_names = {
 'aol'                            : 5120,
 'bgp'                            : 179,
+'biff'                           : 512, 
+'bootpc'                         : 68,
+'bootps'                         : 67,
 'chargen'                        : 19,
 'cifs'                           : 3020,
 'citrix-ica'                     : 1494,
@@ -24,7 +27,8 @@ asa_port_names = {
 'ident'                          : 113,
 'imap4'                          : 143,
 'irc'                            : 194,
-'kerberos'                       : 88,
+'isakmp'                         : 500,
+'kerberos'                       : 750,
 'klogin'                         : 543,
 'kshell'                         : 544,
 'ldap'                           : 389,
@@ -32,27 +36,41 @@ asa_port_names = {
 'login'                          : 513,
 'lotusnotes'                     : 1352,
 'lpd'                            : 515,
+'netbios-ns'                     : 137,
+'netbios-dgm'                    : 138,
 'netbios-ssn'                    : 139,
 'nfs'                            : 2049,
 'nntp'                           : 119,
+'ntp'                            : 123,
 'pcanywhere-data'                : 5631,
+'pcanywhere-status'              : 5632,
 'pim-auto-rp'                    : 496,
 'pop2'                           : 109,
 'pop3'                           : 110,
 'pptp'                           : 1723,
+'radius'                         : 1645,
+'radius-acct'                    : 1646,
+'rip'                            : 520,
 'rsh'                            : 514,
 'rtsp'                           : 554,
 'sip'                            : 5060,
 'smtp'                           : 25,
+'snmp'                           : 161,
+'snmptrap'                       : 162,
 'sqlnet'                         : 1521,
 'ssh'                            : 22,
 'sunrpc'                         : 111,
+'syslog'                         : 514,
 'tacacs'                         : 49,
 'talk'                           : 517,
 'telnet'                         : 23,
+'tftp'                           : 69,
+'time'                           : 37,
 'uucp'                           : 540,
+'who'                            : 513,
 'whois'                          : 43,
-'www'                            : 80
+'www'                            : 80,
+'xdmcp'                          : 177
 }
 
 
@@ -98,7 +116,6 @@ def _parse_ciscoasa(firewall,chunk,start_num):
     # Compare the line to all the available regex's. Execute the appropiate parser for the sub
     # object 
     while servobj.line_counter < len(servobj.text):
-        print firewall.line_counter
         line = servobj.text[servobj.line_counter]
         #print "LINE: ",line
         for obj,regex in re_dict.iteritems():
