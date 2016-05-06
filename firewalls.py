@@ -308,18 +308,30 @@ def _write_fortinet_objectgroups(out_file,firewall):
         out_file.write("\tedit %s\n"%addrgroup.name)
         if addrgroup.description:
             out_file.write("\tset comment %s\n"%addrgroup.description)
-        for memobj in addrgroup.member_objects:
-            out_file.write("\t\tset member %s\n"%memobj.name)
+        out_file.write("\t\tset member %s\n"%addrgroup.member_objects[0].name)
+        for memobj in addrgroup.member_objectsi[1:]:
+            out_file.write("\t\tappend member %s\n"%memobj.name)
         out_file.write("\tend\n")
     out_file.write("config firewall service group\n")
     for servgroup in firewall.service_groups:
         out_file.write("\tedit %s\n"%servgroup.name)
         if servgroup.description:
             out_file.write("\tset comment %s\n"%servgroup.description)
-        for memobj in servgroup.member_objects:
-            out_file.write("\t\tset member %s\n"%memobj.name)
+        out_file.write("\t\tset member %s\n"%servgroup.member_objects[0].name)
+        for memobj in servgroup.member_objects[1:]:
+            out_file.write("\t\tappend member %s\n"%memobj.name)
         out_file.write("\tend\n")
 
 def _write_fortinet_acls(out_file,firewall):
+
+    # First get all the standard ACLs
+    for i in range(len(firewall.ACLs)):
+        acl = firewall.ACLs[i]
+        out_file.write('config firewall policy\n')
+        out_file.write('\tedit %d\n'%i)
+        for rule in acl.rules:
+            out_file.write('\t\t set action %s\n'%rule.action)
+            print vars(rule)
+
     print "HOLY FUCK GOTTA WRITE SOME FORTINET ACL DUMPING CODE"
     quit()

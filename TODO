@@ -9,4 +9,11 @@ OSNAME-MAJORVERSION.MINORVERSION.BUILD and we can parse accordingly.
 
 3) Adding logging to the code would be useful for debugging purposes. Would need a parent logger in
 firewalls.py, with child loggers for each of the separate files/modules. Send all logging levels to
-a file, and only INFO or above to console. 
+a file, and only INFO or above to console.
+
+4) Bolster Cisco ASA ACL parsing code to handle more edge cases
+
+5) Perhaps use python's IP library for all ip addresses/masks, instead of just storing them as
+strings.
+
+6) Write firewall method to find all ACLs and ACL rules that effect a particular IP address 
