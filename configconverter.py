@@ -35,8 +35,8 @@ def check_args(args):
     # Catch any unsupported src/dest firmware/OS combos for a given src vendor and hardware type
     if args.src_vendor == 'cisco' and args.device_type == 'firewall':
         # This should contain all supported source OS for given vendor
-        allowed_src_OS = ['ciscoasa']
-        allowed_dest_OS = ['testfortiOS']
+        allowed_src_OS = ['asa-9.0']
+        allowed_dest_OS = ['fortiOS-5.2']
     elif args.src_vendor == 'cisco' and args.device_type == 'switch':
         allowed_src_OS = []
         allowed_dest_OS = []
@@ -44,8 +44,8 @@ def check_args(args):
         allowed_src_OS = []
         allowed_dest_OS = []
     elif args.src_vendor == 'fortinet' and args.device_type == 'firewall':
-        allowed_src_OS = ['testfortiOS']
-        allowed_dest_OS = ['ciscoasa']
+        allowed_src_OS = ['fortiOS-5.2']
+        allowed_dest_OS = ['asa-9.0']
     elif args.src_vendor == 'fortinet' and args.device_type == 'switch':
         allowed_src_OS = []
         allowed_dest_OS = []
@@ -77,8 +77,8 @@ def main():
     parser.add_argument("src_vendor",type=str,metavar='src_vendor',choices=['fortinet','cisco'],help="The vendor of the source device")
     parser.add_argument("dest_vendor",type=str,metavar='dest_vendor',choices=['fortinet','cisco'],help="The vendor of the destination device")
     # Add OS versions as they become available. Exclude choices based on hardware type and vendor 
-    parser.add_argument("src_OS",type=str,metavar='src_OS',choices=['testfortiOS','ciscoasa'],help="The OS or firmware version of the source device")
-    parser.add_argument("dest_OS",type=str,metavar='dest_OS',choices=['testfortiOS','ciscoasa'],help="The OS or firmware version of the destination device")
+    parser.add_argument("src_OS",type=str,metavar='src_OS',choices=['fortiOS-5.2','asa-9.0'],help="The OS or firmware version of the source device")
+    parser.add_argument("dest_OS",type=str,metavar='dest_OS',choices=['fortiOS-5.2','asa-9.0'],help="The OS or firmware version of the destination device")
     parser.add_argument("src_config",type=str,help="The absolute path to the source configuration file")
     parser.add_argument("dest_config",type=str,default='output.conf',help="The path to the destination config file")
     args = parser.parse_args()

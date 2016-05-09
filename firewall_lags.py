@@ -27,13 +27,13 @@ class LAG(object):
 def parse_lag(firewall,chunk,start_num):
     """Call the correct parser function based on vendor and OS"""
 
-    if firewall.vendor == 'cisco' and firewall.firmware == 'ciscoasa':
-        return _parse_ciscoasa(firewall,chunk,start_num)
+    if firewall.vendor == 'cisco' and firewall.firmware == 'asa-9.0':
+        return _parse_ciscoasa_9dot0(firewall,chunk,start_num)
     else:
         raise NotImplementedError("Sorry, the vendor and firmware combination you specified \
         is not supported")
 #####################################################################################################
-def _parse_ciscoasa(firewall,chunk,start_num):
+def _parse_ciscoasa_9dot0(firewall,chunk,start_num):
     # Initialize port
     lag = LAG(firewall,chunk,start_num)
     # Handle the starting line of the section seperately

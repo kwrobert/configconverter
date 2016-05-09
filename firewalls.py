@@ -77,8 +77,8 @@ class Firewall(object):
 def parse_config(vendor,firmware,config_path):
     """Call the correct parser function based on vendor and OS"""
 
-    if vendor == 'cisco' and firmware == 'ciscoasa':
-        return _parse_ciscoasa(vendor,firmware,config_path)
+    if vendor == 'cisco' and firmware == 'asa-9.0':
+        return _parse_ciscoasa_9dot0(vendor,firmware,config_path)
     else:
         raise NotImplementedError("Sorry, parsing the vendor and firmware combination you specified \
         is not supported")
@@ -86,9 +86,9 @@ def parse_config(vendor,firmware,config_path):
 def write_config(vendor,firmware,dest_path,firewall):
     """Call the correct parser function based on vendor and OS"""
 
-    if vendor == 'cisco' and firmware == 'ciscoasa':
-        return _write_ciscoasa(dest_path,firewall)
-    elif vendor == 'fortinet' and firmware == 'testfortiOS':
+    if vendor == 'cisco' and firmware == 'asa-9.0':
+        return _write_ciscoasa_9dot0(dest_path,firewall)
+    elif vendor == 'fortinet' and firmware == 'fortiOS-5.2':
         return _write_fortinet(dest_path,firewall)
     else:
         raise NotImplementedError("Sorry, writing the vendor and firmware combination you specified \
@@ -98,7 +98,7 @@ def write_config(vendor,firmware,dest_path,firewall):
 #                               CISCO ASA FUNCTIONS
 #####################################################################################################
  
-def _parse_ciscoasa(vendor,firmware,config_path):
+def _parse_ciscoasa_9dot0(vendor,firmware,config_path):
     # Initialize firewall 
     firewall = Firewall(vendor,firmware,config_path)
     # The dictionary of config items the parser understands, and their regex's 
@@ -161,7 +161,7 @@ def _parse_asa_object(firewall,start_line,parse_func,container):
     if not obj in container:
         container.append(obj)
 #---------------------------------------------------------------------------------------------------#
-def _write_ciscoasa(dest_path,firewall):
+def _write_ciscoasa_9dot0(dest_path,firewall):
     print "Writing cisco asa config!"
     print firewall
     print dest_path
@@ -309,7 +309,7 @@ def _write_fortinet_objectgroups(out_file,firewall):
         if addrgroup.description:
             out_file.write("\tset comment %s\n"%addrgroup.description)
         out_file.write("\t\tset member %s\n"%addrgroup.member_objects[0].name)
-        for memobj in addrgroup.member_objectsi[1:]:
+        for memobj in addrgroup.member_objects[1:]:
             out_file.write("\t\tappend member %s\n"%memobj.name)
         out_file.write("\tend\n")
     out_file.write("config firewall service group\n")

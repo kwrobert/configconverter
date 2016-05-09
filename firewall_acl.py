@@ -41,13 +41,13 @@ class StandardACLRule(object):
 def parse_ACL(firewall,text,start_num):
     """Call the correct parser function based on vendor and OS"""
 
-    if firewall.vendor == 'cisco' and firewall.firmware == 'ciscoasa':
-        return _parse_ciscoasa(firewall,text,start_num)
+    if firewall.vendor == 'cisco' and firewall.firmware == 'asa-9.0':
+        return _parse_ciscoasa_9dot0(firewall,text,start_num)
     else:
         raise NotImplementedError("Sorry, parsing the vendor and firmware combination you specified \
         is not supported")
 
-def _parse_ciscoasa(firewall,textlist,start_num):
+def _parse_ciscoasa_9dot0(firewall,textlist,start_num):
     
     # Get the name of the parent ACL for the rule line and make sure it doesn't already exist
     line = textlist[0]
@@ -65,16 +65,16 @@ def _parse_ciscoasa(firewall,textlist,start_num):
         return acl
    
     if kind == 'extended':
-        rule = _parse_ciscoasa_extended(data,acl,priority,kind)
+        rule = _parse_ciscoasa_9dot0_extended(data,acl,priority,kind)
     elif kind == 'standard':
-        rule = _parse_ciscoasa_standard(data,acl,priority,kind)
+        rule = _parse_ciscoasa_9dot0_standard(data,acl,priority,kind)
     acl.rules.append(rule)
     
     # NOTE: We don't increment the firewall counter here because acl rules only occupy a single
     # line so incrementing would cause the code to parse every other acl
     return acl
 
-def _parse_ciscoasa_extended(data,acl,priority,kind):
+def _parse_ciscoasa_9dot0_extended(data,acl,priority,kind):
     # We need to fix how we handle "protocols" here, because you can have an "object" protocol
     # which is followed by a name which completely fucks up all the assumed index numbers
     rule = ExtendedACLRule(acl,priority)
@@ -226,7 +226,7 @@ def _parse_ciscoasa_extended(data,acl,priority,kind):
     print vars(rule)
     return rule
 
-def _parse_ciscoasa_standard(data,acl,priority,kind):
+def _parse_ciscoasa_9dot0_standard(data,acl,priority,kind):
     print 'WOAH ITS A STANDARD RULE WRITE SOME CODE'
     print data
     

@@ -153,8 +153,8 @@ class AddressGroup(ObjectGroup):
 def parse_addrgroup(firewall,chunk,start_num):
     """Call the correct parser function based on vendor and OS"""
 
-    if firewall.vendor == 'cisco' and firewall.firmware == 'ciscoasa':
-        return _parse_ciscoasa_addrgroup(firewall,chunk,start_num)
+    if firewall.vendor == 'cisco' and firewall.firmware == 'asa-9.0':
+        return _parse_ciscoasa_9dot0_addrgroup(firewall,chunk,start_num)
     else:
         raise NotImplementedError("Sorry, the vendor and firmware combination you specified \
         is not supported")
@@ -162,13 +162,13 @@ def parse_addrgroup(firewall,chunk,start_num):
 def parse_servgroup(firewall,chunk,start_num):
     """Call the correct parser function based on vendor and OS"""
 
-    if firewall.vendor == 'cisco' and firewall.firmware == 'ciscoasa':
-        return _parse_ciscoasa_servgroup(firewall,chunk,start_num)
+    if firewall.vendor == 'cisco' and firewall.firmware == 'asa-9.0':
+        return _parse_ciscoasa_9dot0_servgroup(firewall,chunk,start_num)
     else:
         raise NotImplementedError("Sorry, the vendor and firmware combination you specified \
         is not supported")
 #####################################################################################################
-def _parse_ciscoasa_servgroup(firewall,chunk,start_num):
+def _parse_ciscoasa_9dot0_servgroup(firewall,chunk,start_num):
     print "Parsing cisco asa service group"
     servgroup = ServiceGroup(firewall,chunk,start_num)
     data = servgroup.text[servgroup.line_counter].split()
@@ -233,7 +233,7 @@ def _parse_ciscoasa_servgroup(firewall,chunk,start_num):
             servgroup.line_counter += 1
     return servgroup
 
-def _parse_ciscoasa_addrgroup(firewall,chunk,start_num):
+def _parse_ciscoasa_9dot0_addrgroup(firewall,chunk,start_num):
     print "Parsing cisco asa address group"
     addrgroup = AddressGroup(firewall,chunk,start_num)
     addrgroup.name = addrgroup.text[addrgroup.line_counter].split()[-1]
